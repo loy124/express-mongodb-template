@@ -1,11 +1,19 @@
 const express = require("express");
 const app = express();
-const port = 9000;
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 const { User } = require("./models/User");
 const { auth } = require("./middleware/auth");
+const cors = require("cors");
+
+let cors_origin = ["http://localhost:3000"];
+app.use(
+  cors({
+    origin: cors_origin,
+    credentials: true,
+  })
+);
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -27,7 +35,11 @@ mongoose
 
 app.get("/", (req, res) => res.send("Hello world!!!!"));
 
-app.post("/register", (req, res) => {
+app.get("/api/hello", (req, res) => {
+  res.send("안녕하세요");
+});
+
+app.post("/api/user/register", (req, res) => {
   //회원가입을 할때 필요한것
   //post로 넘어온 데이터를 받아서 DB에 저장해준다
   const user = new User(req.body);
@@ -37,7 +49,7 @@ app.post("/register", (req, res) => {
   });
 });
 
-app.post("/login", (req, res) => {
+app.post("/api/user/login", (req, res) => {
   //로그인을할때 아이디와 비밀번호를 받는다
   User.findOne({ email: req.body.email }, (err, user) => {
     if (err) {
@@ -75,7 +87,7 @@ app.post("/login", (req, res) => {
 
 //auth 미들웨어를 가져온다
 //auth 미들웨어에서 필요한것 : Token을 찾아서 검증하기
-app.get("/auth", auth, (req, res) => {
+app.get("/api/user/auth", auth, (req, res) => {
   //auth 미들웨어를 통과한 상태 이므로
   //req.user에 user값을 넣어줬으므로
   res.status(200).json({
@@ -94,11 +106,13 @@ app.get("/auth", auth, (req, res) => {
 app.get("/logout", auth, (req, res) => {
   User.findOneAndUpdate({ _id: req.user._id }, { token: "" }, (err, user) => {
     if (err) return res.json({ success: false, err });
-    // res.clearCookie("x_auth");
+    res.clearCookie("x_auth");
     return res.status(200).send({
       success: true,
     });
   });
 });
+
+const port = 9000;
 
 app.listen(port, () => console.log(`listening on port ${port}`));
