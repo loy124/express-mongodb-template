@@ -7,10 +7,9 @@ const { User } = require("./models/User");
 const { auth } = require("./middleware/auth");
 const cors = require("cors");
 
-let cors_origin = ["http://localhost:3000"];
 app.use(
   cors({
-    origin: cors_origin,
+    origin: true,
     credentials: true,
   })
 );
@@ -52,7 +51,7 @@ app.post("/api/user/register", (req, res) => {
 app.post("/api/user/login", (req, res) => {
   //로그인을할때 아이디와 비밀번호를 받는다
   User.findOne({ email: req.body.email }, (err, user) => {
-    if (err) {
+    if (err || !user) {
       return res.json({
         loginSuccess: false,
         message: "존재하지 않는 아이디입니다.",
@@ -103,7 +102,7 @@ app.get("/api/user/auth", auth, (req, res) => {
 });
 
 //user_id를 찾아서(auth를 통해 user의 정보에 들어있다) db에있는 토큰값을 비워준다
-app.get("/logout", auth, (req, res) => {
+app.post("/api/user/logout", auth, (req, res) => {
   User.findOneAndUpdate({ _id: req.user._id }, { token: "" }, (err, user) => {
     if (err) return res.json({ success: false, err });
     res.clearCookie("x_auth");
